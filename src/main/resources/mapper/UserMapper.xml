@@ -59,7 +59,7 @@
         INSERT INTO sys_user (
             username, password, real_name, id_card, phone, email, status, role, create_time, update_time
         ) VALUES (
-            #{username}, #{password}, #{realName}, #{idCard}, #{phone}, #{email}, #{status}, #{role}, NOW(), NOW()
+            #{username}, #{password}, #{realName}, #{idCard}, #{phone}, #{email}, #{status}, #{role}, datetime('now', 'localtime'), datetime('now', 'localtime')
         )
     </insert>
 
@@ -91,7 +91,7 @@
             <if test="role != null and role != ''">
                 role = #{role},
             </if>
-            update_time = NOW()
+            update_time = datetime('now', 'localtime')
         </set>
         WHERE id = #{id}
     </update>
@@ -104,7 +104,7 @@
     <!-- 注销用户（逻辑删除） -->
     <update id="cancelUser">
         UPDATE sys_user
-        SET status = 1, cancel_time = NOW(), update_time = NOW()
+        SET status = 1, cancel_time = datetime('now', 'localtime'), update_time = datetime('now', 'localtime')
         WHERE id = #{id} AND status = 0
     </update>
 

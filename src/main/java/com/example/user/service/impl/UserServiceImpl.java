@@ -172,9 +172,12 @@ public class UserServiceImpl implements UserService {
         vo.setUpdateTime(user.getUpdateTime());
         vo.setCancelTime(user.getCancelTime());
 
-        // 身份证号脱敏显示
-        String decryptedIdCard = CipherUtil.decrypt(user.getIdCard());
-        vo.setMaskedIdCard(maskIdCard(decryptedIdCard));
+        try {
+            String decryptedIdCard = CipherUtil.decrypt(user.getIdCard());
+            vo.setMaskedIdCard(maskIdCard(decryptedIdCard));
+        } catch (Exception e) {
+            vo.setMaskedIdCard(maskIdCard(user.getIdCard()));
+        }
 
         return vo;
     }
