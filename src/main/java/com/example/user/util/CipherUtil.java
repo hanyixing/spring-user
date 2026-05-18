@@ -9,16 +9,27 @@ public class CipherUtil {
 
     private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
-    private static final String DEFAULT_KEY = "abcdefghijklmnopqrstuvwxzy123456";
+    private static final String DEFAULT_KEY = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=";
 
     private static SecretKeySpec secretKey;
+    private static boolean initialized = false;
 
-    static {
+    public static void initialize(String base64Key) {
+        if (initialized) {
+            return;
+        }
         try {
-            byte[] keyBytes = DEFAULT_KEY.getBytes(StandardCharsets.UTF_8);
+            byte[] keyBytes = Base64.getDecoder().decode(base64Key);
             secretKey = new SecretKeySpec(keyBytes, ALGORITHM);
+            initialized = true;
         } catch (Exception e) {
             throw new RuntimeException("初始化加密密钥失败", e);
+        }
+    }
+
+    private static void ensureInitialized() {
+        if (!initialized) {
+            initialize(DEFAULT_KEY);
         }
     }
 
@@ -26,6 +37,7 @@ public class CipherUtil {
         if (plainText == null || plainText.isEmpty()) {
             return plainText;
         }
+        ensureInitialized();
         try {
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
@@ -40,6 +52,7 @@ public class CipherUtil {
         if (cipherText == null || cipherText.isEmpty()) {
             return cipherText;
         }
+        ensureInitialized();
         try {
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             cipher.init(Cipher.DECRYPT_MODE, secretKey);

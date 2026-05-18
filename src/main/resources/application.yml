@@ -22,3 +22,15 @@ logging:
 encryption:
   aes-key: YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=
   key-type: FIXED
+
+default-admin:
+  username: admin
+  password: admin123
+  real-name: 超级管理员
+  id-card: 110101199001011234
+  phone: 13800138000
+  email: admin@example.com
+  role: SUPER_ADMIN
+
+test-data:
+  enabled: true

@@ -1,89 +1,140 @@
 <template>
   <div class="home-container">
-    <el-card class="welcome-card">
-      <template #header>
-        <div class="card-header">
-          <span>欢迎使用用户管理系统</span>
-        </div>
-      </template>
+    <el-row :gutter="20">
+      <el-col :span="16">
+        <el-card class="welcome-card">
+          <template #header>
+            <div class="card-header">
+              <span>欢迎使用用户管理系统</span>
+            </div>
+          </template>
+          
+          <div class="welcome-content">
+            <h2>欢迎，{{ userStore.currentUser?.realName }}</h2>
+            <p>当前角色：{{ roleText }}</p>
+            
+            <el-divider />
+            
+            <div class="features">
+              <h3>系统功能</h3>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-card shadow="hover" class="feature-card">
+                    <el-icon><UserFilled /></el-icon>
+                    <h4>用户管理</h4>
+                    <p>支持用户的增删改查操作</p>
+                  </el-card>
+                </el-col>
+                <el-col :span="12">
+                  <el-card shadow="hover" class="feature-card">
+                    <el-icon><Lock /></el-icon>
+                    <h4>权限控制</h4>
+                    <p>基于角色的权限管理</p>
+                  </el-card>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20" style="margin-top: 20px;">
+                <el-col :span="12">
+                  <el-card shadow="hover" class="feature-card">
+                    <el-icon><DocumentChecked /></el-icon>
+                    <h4>登录记录</h4>
+                    <p>记录用户登录时间和IP</p>
+                  </el-card>
+                </el-col>
+                <el-col :span="12">
+                  <el-card shadow="hover" class="feature-card">
+                    <el-icon><Connection /></el-icon>
+                    <h4>数据加密</h4>
+                    <p>敏感信息AES加密存储</p>
+                  </el-card>
+                </el-col>
+              </el-row>
+            </div>
+            
+            <el-divider />
+            
+            <el-button type="primary" size="large" @click="goToUsers" v-if="userStore.isAdmin">
+              <el-icon><List /></el-icon>
+              进入用户管理
+            </el-button>
+          </div>
+        </el-card>
+      </el-col>
       
-      <div class="welcome-content">
-        <el-icon class="welcome-icon"><User /></el-icon>
-        <h2>用户管理系统</h2>
-        <p>这是一个基于 Spring Boot + Vue 3 的用户管理系统</p>
-        
-        <el-divider />
-        
-        <div class="features">
-          <h3>系统功能</h3>
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-card shadow="hover" class="feature-card">
-                <el-icon><UserFilled /></el-icon>
-                <h4>用户管理</h4>
-                <p>支持用户的增删改查操作</p>
-              </el-card>
-            </el-col>
-            <el-col :span="12">
-              <el-card shadow="hover" class="feature-card">
-                <el-icon><Lock /></el-icon>
-                <h4>数据加密</h4>
-                <p>敏感信息采用AES加密存储</p>
-              </el-card>
-            </el-col>
-          </el-row>
-          <el-row :gutter="20" style="margin-top: 20px;">
-            <el-col :span="12">
-              <el-card shadow="hover" class="feature-card">
-                <el-icon><DocumentChecked /></el-icon>
-                <h4>数据验证</h4>
-                <p>身份证、手机号等格式验证</p>
-              </el-card>
-            </el-col>
-            <el-col :span="12">
-              <el-card shadow="hover" class="feature-card">
-                <el-icon><Connection /></el-icon>
-                <h4>SQLite数据库</h4>
-                <p>轻量级数据库，易于部署</p>
-              </el-card>
-            </el-col>
-          </el-row>
-        </div>
-        
-        <el-divider />
-        
-        <el-button type="primary" size="large" @click="goToUsers">
-          <el-icon><List /></el-icon>
-          进入用户管理
-        </el-button>
-      </div>
-    </el-card>
+      <el-col :span="8">
+        <el-card class="login-log-card">
+          <template #header>
+            <div class="card-header">
+              <span>最近登录记录</span>
+            </div>
+          </template>
+          
+          <el-table :data="loginLogs" v-loading="loading" max-height="400">
+            <el-table-column prop="loginTime" label="时间" width="160" />
+            <el-table-column prop="ipAddress" label="IP地址" width="120" />
+            <el-table-column label="状态" width="80">
+              <template #default="{ row }">
+                <el-tag :type="row.loginStatus === 1 ? 'success' : 'danger'" size="small">
+                  {{ row.loginStatus === 1 ? '成功' : '失败' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, UserFilled, Lock, DocumentChecked, Connection, List } from '@element-plus/icons-vue'
+import { UserFilled, Lock, DocumentChecked, Connection, List } from '@element-plus/icons-vue'
+import { useUserStore } from '../stores/user'
+import { userApi, type LoginLog } from '../api/user'
 
 const router = useRouter()
+const userStore = useUserStore()
+const loading = ref(false)
+const loginLogs = ref<LoginLog[]>([])
+
+const roleText = computed(() => {
+  switch (userStore.role) {
+    case 'SUPER_ADMIN': return '超级管理员'
+    case 'ADMIN': return '管理员'
+    default: return '普通用户'
+  }
+})
 
 const goToUsers = () => {
   router.push('/users')
 }
+
+const fetchLoginLogs = async () => {
+  if (userStore.currentUser?.id) {
+    loading.value = true
+    try {
+      loginLogs.value = await userApi.getLoginLogs(userStore.currentUser.id)
+    } catch (error) {
+      console.error('获取登录记录失败')
+    } finally {
+      loading.value = false
+    }
+  }
+}
+
+onMounted(() => {
+  fetchLoginLogs()
+})
 </script>
 
 <style scoped>
 .home-container {
   padding: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: calc(100vh - 40px);
 }
 
-.welcome-card {
-  max-width: 900px;
-  width: 100%;
+.welcome-card, .login-log-card {
+  height: 100%;
 }
 
 .card-header {
@@ -94,12 +145,6 @@ const goToUsers = () => {
 .welcome-content {
   text-align: center;
   padding: 20px;
-}
-
-.welcome-icon {
-  font-size: 80px;
-  color: #409EFF;
-  margin-bottom: 20px;
 }
 
 .welcome-content h2 {

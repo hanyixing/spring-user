@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.user.mapper.LoginLogMapper">
+
+    <resultMap id="LoginLogResultMap" type="com.example.user.entity.LoginLog">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="loginTime" column="login_time"/>
+        <result property="ipAddress" column="ip_address"/>
+        <result property="loginStatus" column="login_status"/>
+        <result property="message" column="message"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.example.user.entity.LoginLog">
+        INSERT INTO sys_login_log (user_id, username, login_time, ip_address, login_status, message)
+        VALUES (#{userId}, #{username}, #{loginTime}, #{ipAddress}, #{loginStatus}, #{message})
+    </insert>
+
+    <select id="selectById" resultMap="LoginLogResultMap">
+        SELECT * FROM sys_login_log WHERE id = #{id}
+    </select>
+
+    <select id="selectByUserId" resultMap="LoginLogResultMap">
+        SELECT * FROM sys_login_log WHERE user_id = #{userId} ORDER BY login_time DESC
+    </select>
+
+    <select id="selectAll" resultMap="LoginLogResultMap">
+        SELECT * FROM sys_login_log ORDER BY login_time DESC
+    </select>
+
+</mapper>

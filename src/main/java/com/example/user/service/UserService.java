@@ -1,5 +1,6 @@
 package com.example.user.service;
 
+import com.example.user.entity.LoginLog;
 import com.example.user.entity.User;
 import com.example.user.entity.dto.UserDTO;
 import com.example.user.entity.vo.UserVO;
@@ -22,6 +23,11 @@ public interface UserService {
     UserVO getUserById(Long id);
 
     /**
+     * 根据ID查询用户实体（用于权限检查）
+     */
+    User getUserEntityById(Long id);
+
+    /**
      * 根据用户名查询用户
      */
     UserVO getUserByUsername(String username);
@@ -30,6 +36,11 @@ public interface UserService {
      * 查询所有用户
      */
     List<UserVO> getAllUsers();
+
+    /**
+     * 查询指定角色级别以下的用户
+     */
+    List<UserVO> getUsersByRoleLevel(int maxRoleLevel);
 
     /**
      * 查询所有正常状态的用户
@@ -54,5 +65,25 @@ public interface UserService {
     /**
      * 用户登录验证
      */
-    UserVO login(String username, String password);
+    UserVO login(String username, String password, String ipAddress);
+
+    /**
+     * 修改用户密码
+     */
+    void updatePassword(Long id, String newPassword);
+
+    /**
+     * 修改用户角色
+     */
+    void updateRole(Long id, String newRole);
+
+    /**
+     * 获取用户登录记录
+     */
+    List<LoginLog> getLoginLogs(Long userId);
+
+    /**
+     * 获取所有登录记录
+     */
+    List<LoginLog> getAllLoginLogs();
 }

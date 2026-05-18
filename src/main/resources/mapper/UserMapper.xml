@@ -45,6 +45,19 @@
         ORDER BY create_time DESC
     </select>
 
+    <!-- 查询指定角色级别的用户 -->
+    <select id="selectByRoleLevel" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_user
+        WHERE CASE role
+            WHEN 'SUPER_ADMIN' THEN 3
+            WHEN 'ADMIN' THEN 2
+            ELSE 1
+        END &lt; #{maxRoleLevel}
+        ORDER BY create_time DESC
+    </select>
+
     <!-- 查询所有正常状态的用户 -->
     <select id="selectAllActive" resultMap="BaseResultMap">
         SELECT

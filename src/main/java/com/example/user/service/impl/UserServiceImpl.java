@@ -1,8 +1,10 @@
 package com.example.user.service.impl;
 
+import com.example.user.entity.LoginLog;
 import com.example.user.entity.User;
 import com.example.user.entity.dto.UserDTO;
 import com.example.user.entity.vo.UserVO;
+import com.example.user.mapper.LoginLogMapper;
 import com.example.user.mapper.UserMapper;
 import com.example.user.service.UserService;
 import com.example.user.util.CipherUtil;
@@ -10,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,6 +25,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
+    private final LoginLogMapper loginLogMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -59,6 +64,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User getUserEntityById(Long id) {
+        return userMapper.selectById(id);
+    }
+
+    @Override
     public UserVO getUserByUsername(String username) {
         User user = userMapper.selectByUsername(username);
         if (user == null) {
@@ -70,6 +80,12 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserVO> getAllUsers() {
         List<User> users = userMapper.selectAll();
+        return users.stream().map(this::convertToVO).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<UserVO> getUsersByRoleLevel(int maxRoleLevel) {
+        List<User> users = userMapper.selectByRoleLevel(maxRoleLevel);
         return users.stream().map(this::convertToVO).collect(Collectors.toList());
     }
 
@@ -138,22 +154,75 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserVO login(String username, String password) {
+    public UserVO login(String username, String password, String ipAddress) {
         User user = userMapper.selectByUsername(username);
+        LoginLog loginLog = new LoginLog();
+        loginLog.setUsername(username);
+        loginLog.setIpAddress(ipAddress);
+        loginLog.setLoginTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
         if (user == null) {
+            loginLog.setLoginStatus(0);
+            loginLog.setMessage("用户不存在");
+            loginLog.setUserId(0L);
+            loginLogMapper.insert(loginLog);
             throw new RuntimeException("用户名或密码错误");
         }
+
+        loginLog.setUserId(user.getId());
+
         if (user.getStatus() == 1) {
+            loginLog.setLoginStatus(0);
+            loginLog.setMessage("用户已注销");
+            loginLogMapper.insert(loginLog);
             throw new RuntimeException("用户已注销");
         }
 
-        // 验证密码
         String decryptedPassword = CipherUtil.decrypt(user.getPassword());
         if (!decryptedPassword.equals(password)) {
+            loginLog.setLoginStatus(0);
+            loginLog.setMessage("密码错误");
+            loginLogMapper.insert(loginLog);
             throw new RuntimeException("用户名或密码错误");
         }
 
+        loginLog.setLoginStatus(1);
+        loginLog.setMessage("登录成功");
+        loginLogMapper.insert(loginLog);
+
         return convertToVO(user);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updatePassword(Long id, String newPassword) {
+        User user = userMapper.selectById(id);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        user.setEncryptedPassword(newPassword);
+        userMapper.update(user);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateRole(Long id, String newRole) {
+        User user = userMapper.selectById(id);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        user.setRole(newRole);
+        userMapper.update(user);
+    }
+
+    @Override
+    public List<LoginLog> getLoginLogs(Long userId) {
+        return loginLogMapper.selectByUserId(userId);
+    }
+
+    @Override
+    public List<LoginLog> getAllLoginLogs() {
+        return loginLogMapper.selectAll();
     }
 
     /**

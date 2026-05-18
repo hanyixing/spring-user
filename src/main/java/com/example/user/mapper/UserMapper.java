@@ -28,6 +28,11 @@ public interface UserMapper {
     List<User> selectAll();
 
     /**
+     * 查询指定角色级别的用户（用于权限控制）
+     */
+    List<User> selectByRoleLevel(@Param("maxRoleLevel") int maxRoleLevel);
+
+    /**
      * 查询所有正常状态的用户
      */
     List<User> selectAllActive();
