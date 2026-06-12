@@ -11,19 +11,29 @@ public class CipherUtil {
     private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
     private static final String DEFAULT_KEY = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=";
 
-    private static SecretKeySpec secretKey;
-    private static boolean initialized = false;
+    private static volatile SecretKeySpec secretKey;
+    private static volatile boolean initialized = false;
+    private static final Object INIT_LOCK = new Object();
 
     public static void initialize(String base64Key) {
+        // 双重检查锁定：已初始化则无锁快速返回
         if (initialized) {
             return;
         }
-        try {
-            byte[] keyBytes = Base64.getDecoder().decode(base64Key);
-            secretKey = new SecretKeySpec(keyBytes, ALGORITHM);
-            initialized = true;
-        } catch (Exception e) {
-            throw new RuntimeException("初始化加密密钥失败", e);
+        synchronized (INIT_LOCK) {
+            // 再次检查，避免多个线程在等待锁期间重复初始化（保持“首次初始化生效”的语义）
+            if (initialized) {
+                return;
+            }
+            try {
+                byte[] keyBytes = Base64.getDecoder().decode(base64Key);
+                // 先发布 secretKey，再置 initialized=true；配合 volatile 保证：
+                // 其他线程一旦读到 initialized=true，secretKey 必定已完成构造，杜绝读到 null 的半初始化状态
+                secretKey = new SecretKeySpec(keyBytes, ALGORITHM);
+                initialized = true;
+            } catch (Exception e) {
+                throw new RuntimeException("初始化加密密钥失败", e);
+            }
         }
     }
 
