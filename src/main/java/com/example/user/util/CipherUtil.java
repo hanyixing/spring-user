@@ -11,25 +11,40 @@ public class CipherUtil {
     private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
     private static final String DEFAULT_KEY = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=";
 
-    private static SecretKeySpec secretKey;
-    private static boolean initialized = false;
+    private static volatile SecretKeySpec secretKey;
+    private static volatile boolean initialized = false;
 
     public static void initialize(String base64Key) {
         if (initialized) {
             return;
         }
-        try {
-            byte[] keyBytes = Base64.getDecoder().decode(base64Key);
-            secretKey = new SecretKeySpec(keyBytes, ALGORITHM);
-            initialized = true;
-        } catch (Exception e) {
-            throw new RuntimeException("初始化加密密钥失败", e);
+        synchronized (CipherUtil.class) {
+            if (initialized) {
+                return;
+            }
+            try {
+                byte[] keyBytes = Base64.getDecoder().decode(base64Key);
+                secretKey = new SecretKeySpec(keyBytes, ALGORITHM);
+                initialized = true;
+            } catch (Exception e) {
+                throw new RuntimeException("初始化加密密钥失败", e);
+            }
         }
     }
 
     private static void ensureInitialized() {
         if (!initialized) {
             initialize(DEFAULT_KEY);
+        }
+    }
+
+    /**
+     * 重置初始化状态，仅用于测试。
+     */
+    static void resetForTesting() {
+        synchronized (CipherUtil.class) {
+            secretKey = null;
+            initialized = false;
         }
     }
 
