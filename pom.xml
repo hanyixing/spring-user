@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Spring Boot parent POM 统一管理 Spring 生态及常用插件版本 -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -24,43 +25,75 @@
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- 统一管理第三方依赖版本（parent POM 未覆盖的部分） -->
+        <lombok.version>1.18.28</lombok.version>
+        <mybatis-spring-boot.version>2.3.1</mybatis-spring-boot.version>
+        <sqlite-jdbc.version>3.42.0.0</sqlite-jdbc.version>
+
+        <!-- 构建产物版本信息与构建时间戳 -->
+        <maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss'Z'</maven.build.timestamp.format>
+        <build.timestamp>${maven.build.timestamp}</build.timestamp>
     </properties>
 
+    <!--
+        统一依赖版本管理：
+        parent POM 已统一管理 spring-boot-* / lombok 等版本，
+        此处通过 dependencyManagement + properties 集中声明其余第三方依赖版本，
+        使 dependencies 中无需再硬编码版本号。
+    -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${mybatis-spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.xerial</groupId>
+                <artifactId>sqlite-jdbc</artifactId>
+                <version>${sqlite-jdbc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
-        <!-- Spring Boot Web -->
+        <!-- Spring Boot Web (版本由 parent 管理) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring Boot Validation -->
+        <!-- Spring Boot Validation (版本由 parent 管理) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- MyBatis -->
+        <!-- MyBatis (版本由 dependencyManagement 管理) -->
         <dependency>
             <groupId>org.mybatis.spring.boot</groupId>
             <artifactId>mybatis-spring-boot-starter</artifactId>
-            <version>2.3.1</version>
         </dependency>
 
-        <!-- SQLite -->
+        <!-- SQLite (版本由 dependencyManagement 管理) -->
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
-            <version>3.42.0.0</version>
         </dependency>
 
-        <!-- Lombok -->
+        <!-- Lombok (版本由 dependencyManagement 管理) -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.28</version>
         </dependency>
 
-        <!-- Spring Boot Test -->
+        <!-- Spring Boot Test (版本由 parent 管理) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -70,26 +103,42 @@
 
     <build>
         <plugins>
+            <!-- 编译插件版本由 parent 管理，仅保留必要配置 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.28</version>
+                            <version>${lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+
+            <!-- Spring Boot 打包插件，版本由 parent 管理；启用 build-info 生成版本信息与时间戳 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>2.7.14</version>
+                <executions>
+                    <execution>
+                        <id>build-info</id>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                        <configuration>
+                            <!-- 写入 META-INF/build-info.properties：包含 version 与构建时间，并附加额外信息 -->
+                            <additionalProperties>
+                                <java.version>${java.version}</java.version>
+                                <timestamp>${build.timestamp}</timestamp>
+                            </additionalProperties>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

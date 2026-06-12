@@ -1,0 +1,31 @@
+# ============================================================
+# 开发环境配置（profile: dev）
+# 数据库路径独立于测试/生产；提供本地回退的密钥与密码以便快速启动
+# 所有敏感项均支持通过环境变量覆盖
+# ============================================================
+spring:
+  datasource:
+    # 开发库路径，可通过环境变量 SQLITE_DB_PATH 覆盖
+    url: jdbc:sqlite:${SQLITE_DB_PATH:./data/user.db}
+
+mybatis:
+  configuration:
+    # 开发环境打印 SQL，便于调试
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    cache-enabled: false
+
+logging:
+  level:
+    com.example.user.mapper: debug
+
+# AES 密钥：开发环境提供本地回退值，生产务必通过环境变量 ENCRYPTION_AES_KEY 注入
+encryption:
+  aes-key: ${ENCRYPTION_AES_KEY:YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=}
+
+# 默认管理员密码：开发环境回退值，生产必须通过环境变量 DEFAULT_ADMIN_PASSWORD 注入
+default-admin:
+  password: ${DEFAULT_ADMIN_PASSWORD:admin123}
+
+# 开发环境默认加载测试数据
+test-data:
+  enabled: ${TEST_DATA_ENABLED:true}

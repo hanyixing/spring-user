@@ -1,36 +1,37 @@
+# ============================================================
+# 公共配置（所有环境共享，不包含任何敏感信息）
+# 通过 spring.profiles.active 切换 dev / test / prod 环境
+# 敏感信息（AES 密钥、管理员密码）与数据库路径在各 profile 中按环境注入
+# ============================================================
 server:
-  port: 10010
+  port: ${SERVER_PORT:10010}
 
 spring:
   application:
     name: spring-user
+  # 默认激活开发环境，可通过环境变量 SPRING_PROFILES_ACTIVE 覆盖（dev/test/prod）
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   datasource:
     driver-class-name: org.sqlite.JDBC
-    url: jdbc:sqlite:./data/user.db
+    # 数据库连接地址（SQLite 路径）按环境区分，见 application-{env}.yml
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.example.user.entity
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 缓存、日志实现等按环境差异化配置，见 application-{env}.yml
 
-logging:
-  level:
-    com.example.user.mapper: debug
-
+# 加密配置：AES 密钥按环境注入（见各 profile），此处仅声明非敏感项
 encryption:
-  aes-key: YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=
-  key-type: FIXED
+  key-type: ${ENCRYPTION_KEY_TYPE:FIXED}
 
+# 默认管理员：敏感的 password 按环境注入；其余为可参数化的非敏感默认值
 default-admin:
-  username: admin
-  password: admin123
-  real-name: 超级管理员
-  id-card: 110101199001011234
-  phone: 13800138000
-  email: admin@example.com
-  role: SUPER_ADMIN
-
-test-data:
-  enabled: true
+  username: ${DEFAULT_ADMIN_USERNAME:admin}
+  real-name: ${DEFAULT_ADMIN_REAL_NAME:超级管理员}
+  id-card: ${DEFAULT_ADMIN_ID_CARD:110101199001011234}
+  phone: ${DEFAULT_ADMIN_PHONE:13800138000}
+  email: ${DEFAULT_ADMIN_EMAIL:admin@example.com}
+  role: ${DEFAULT_ADMIN_ROLE:SUPER_ADMIN}
