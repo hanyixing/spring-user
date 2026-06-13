@@ -23,9 +23,13 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+# frontend-maven-plugin 下载的本地 node 运行时
+frontend/node/
 
 # Frontend build (keep dist for Spring Boot static resources)
 # frontend/dist/
+# 由 Maven 前端构建自动生成（frontend/dist 复制而来），不纳入版本控制
+src/main/resources/static/
 
 # OS
 .DS_Store
